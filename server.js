@@ -31,7 +31,7 @@ app.get("/alunos", async (req,res)=>{
     
     
     try {
-        const [resultado] = await conexao.query(`SELECT * FROM alunos;`)
+        const [resultado] = await conexao.query("SELECT * FROM alunos;")
         res.status(200).json(resultado);
     } catch (error) {
         console.log(error);
@@ -42,73 +42,73 @@ app.get("/alunos", async (req,res)=>{
     }
 );
 
-app.get("/alunos/:id", (req,res)=>{
+app.get("/alunos/:id", async (req,res)=>{
     const id = Number(req.params.id);
 
-    const aluno = ALUNOS.find(a => a.id === id);
+    try {
+        const[resultado] = await conexao.query("SELECT * FROM alunos WHERE id = ?;", [id]);
 
-    if(!aluno){
-        return res.status(404).json({
-            mensagem: "Aluno não encontrado"
-        });
+        if (resultado.length === 0){
+            return res.status(404).json({mensagem: "Aluno não encontrado"});
+        }
+
+        res.status(200).json(resultado[0]);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({mensagem:"Erro ao buscar aluno"});
     }
-    res.status(200).json(aluno);
-    // console.log(req);
+
+    // ALTERAÇÃO: Removida a busca antiga no array ALUNOS que ficava abaixo do bloco try/catch para evitar o erro de requisição duplicada (ERR_HTTP_HEADERS_SENT).
 });
 
-app.post("/alunos/cadastrar", (req,res)=>{
+app.post("/alunos/cadastrar", async (req,res)=>{ // ALTERAÇÃO: Adicionado 'async' para permitir await na consulta do banco de dados
     const {nome, curso} = req.body;
 
-    if(!nome || !curso){
+   if(!nome || !curso){
         return res.status(400).json({mensagem: "Nome e curso são obrigatórios"});
     }
 
-    const novoId = ALUNOS.length > 0 ? Math.max(...ALUNOS.map(aluno => aluno.id)) + 1 : 1;
+    // ALTERAÇÃO: Substituído o cadastro em memória (ALUNOS.push) pela inserção direta no banco de dados MySQL
+    try {
+        const [resultado] = await conexao.query(`INSERT INTO alunos (nome, curso) VALUES ('${nome}', '${curso}');`);
 
-    // const novoId = ALUNOS.length > 0 ? ALUNOS[ALUNOS.length - 1].id + 1 : 1;
-    
-    const novoAluno = {
-        id: novoId,
-        nome : nome,
-        curso: curso
-    };
-
-    ALUNOS.push(novoAluno);
-
-    res.status(201).json({
-        mensagem: "Aluno cadastrado com sucesso"
-    });
-
-    
+        res.status(201).json({
+            mensagem: "Aluno cadastrado com sucesso",
+            id: resultado.insertId
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({mensagem: "Erro ao cadastrar aluno"});
+    }
 });
 
-app.put("/alunos/:id", (req, res)=>{
+app.put("/alunos/:id", async (req, res)=>{ // ALTERAÇÃO: Adicionado 'async' para permitir await na consulta do banco de dados
     const id = Number(req.params.id);
     const {nome, curso} = req.body;
 
-    const indice = ALUNOS.findIndex(aluno => aluno.id === id);
-
-    if(indice === -1){
-        return res.status(404).json({
-            mensagem: "Aluno não encontrado"
-        });
-    }
     if(!nome || !curso){
         return res.status(400).json({
             mensagem: "Nome e curso são obrigatórios"
         });
     }
 
-    ALUNOS[indice] = {
-        id: id,
-        nome: nome,
-        curso: curso
-    }
+    // ALTERAÇÃO: Substituída a atualização em memória (ALUNOS[indice]) pelo UPDATE no banco de dados MySQL
+    try {
+        const [resultado] = await conexao.query("UPDATE alunos SET nome = ?, curso = ? WHERE id = ?;", [nome, curso, id]);
 
-    res.status(200).json({
-        mensagem:"Aluno atualizado com sucesso",
-        aluno: ALUNOS[indice]
-    });
+        if (resultado.affectedRows === 0) {
+            return res.status(404).json({
+                mensagem: "Aluno não encontrado"
+            });
+        }
+
+        res.status(200).json({
+            mensagem: "Aluno atualizado com sucesso"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({mensagem: "Erro ao atualizar aluno"});
+    }
 });
 
 const PORTA = 3000;
