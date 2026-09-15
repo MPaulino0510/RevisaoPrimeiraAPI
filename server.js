@@ -33,7 +33,7 @@ app.get("/alunos",(req,res)=>{
 app.get("/alunos/:id", (req,res)=>{
     const id = Number(req.params.id);
 
-    const aluno = ALUNOS.find(a => a.id = id);
+    const aluno = ALUNOS.find(a => a.id === id);
 
     res.status(200).json(aluno);
     // console.log(req);
