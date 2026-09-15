@@ -35,9 +35,38 @@ app.get("/alunos/:id", (req,res)=>{
 
     const aluno = ALUNOS.find(a => a.id === id);
 
+    if(!aluno){
+        return res.status(404).json({
+            mensagem: "Aluno não encontrado"
+        });
+    }
     res.status(200).json(aluno);
     // console.log(req);
     res.send("Funcionando");
+});
+
+app.post("/alunos/cadastrar", (req,res)=>{
+    const {nome, curso} = req.body;
+
+    if(!nome || !curso){
+        return res.status(400).json({mensagem: "Nome e curso são obrigatórios"});
+    }
+
+    const novoId = ALUNOS.length > 0 ? Math.max(...ALUNOS.map(aluno => aluno.id)) + 1 : 1;
+
+    // const novoId = ALUNOS.length > 0 ? ALUNOS[ALUNOS.length - 1].id + 1 : 1;
+    
+    const novoAluno = {
+        id: novoId,
+        nome : nome,
+        curso: curso
+    };
+
+    ALUNOS.push(novoAluno);
+
+    res.status(201).json({
+        mensagem: "Aluno cadastrado com sucesso"
+    });
 });
 
 const PORTA = 3000;
