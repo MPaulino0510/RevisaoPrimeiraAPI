@@ -42,7 +42,6 @@ app.get("/alunos/:id", (req,res)=>{
     }
     res.status(200).json(aluno);
     // console.log(req);
-    res.send("Funcionando");
 });
 
 app.post("/alunos/cadastrar", (req,res)=>{
@@ -67,6 +66,24 @@ app.post("/alunos/cadastrar", (req,res)=>{
     res.status(201).json({
         mensagem: "Aluno cadastrado com sucesso"
     });
+});
+
+app.put("/alunos/:id", (req, res)=>{
+    const id = Number(req.params.id);
+    const {nome, curso} = req.body;
+
+    const indice = ALUNOS.findIndex(aluno => aluno.id === id);
+
+    if(indice === -1){
+        return res.status(404).json({
+            mensagem: "Aluno não encontrado"
+        });
+    }
+    if(!nome || !curso){
+        return res.status(400).json({
+            mensagem: "Nome e curso são obrigatórios"
+        });
+    }
 });
 
 const PORTA = 3000;
